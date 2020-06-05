@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+    <style type="text/css">
+    	* {
+			margin: 0;
+			padding: 0;
+			box-sizing: border-box;
+		}
+
+		video {
+			min-width: 100%;
+			min-height: 100vh;
+			object-fit: cover;
+		}
+
+		.notes {
+			position: absolute;
+			bottom: 0px;
+			left: 0px;
+			width: 100%;
+			height: 20vh;
+			display: flex;
+			justify-content: space-around;
+			align-items: center;
+		}
+
+		.notes h3 {
+			font-size: 50px;
+			color: white;
+		}
+    </style>
+    <title>AIR GUITAR</title>
+</head>
+<body>
+	<video id="video"></video>
+	<audio src="" id="audio"></audio>
+	<div class="notes">
+		<h3>E</h3>
+		<h3>C</h3>
+		<h3>B</h3>
+		<h3>A</h3>
+	</div>
+
+	<script src="https://cdn.jsdelivr.net/npm/handtrackjs/dist/handtrack.min.js"></script>
+    <script>
+    	const modelParams = {
+		  flipHorizontal: false,   // flip e.g for video 
+		  imageScaleFactor: 0.7,  // reduce input image size for gains in speed.
+		  maxNumBoxes: 1,        // maximum number of boxes to detect
+		  iouThreshold: 0.5,      // ioU threshold for non-max suppression
+		  scoreThreshold: 0.50,    // confidence threshold for predictions.
+		}
+
+		navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia || navigator.msGetUserMedia;
+
+		const video = document.querySelector('#video');
+		const audio = document.querySelector('#audio');
+		let model;
+
+		handTrack.startVideo(video)
+			.then(status => {
+				if (status) {
+					navigator.getUserMedia({ video: {} }, stream => {
+						video.srcObject = stream;
+						//detection
+						setInterval(runDetection,300)
+					},
+					err => { console.log(err); }
+					);
+				}
+			});
+
+		function runDetection(){
+			model.detect(video).then( predictions => {
+				if (predictions.length != 0) {
+					let hand1 = predictions[0].bbox;
+					let x = hand1[0];
+					let y = hand1[1];
+
+					if(y > 300){
+						if(x < 200) {
+							audio.src = 'a-chord.mp3';
+						}
+						else if (x > 400) {
+							audio.src = 'e-chord.mp3';
+						}
+						else if (x > 300) {
+							audio.src = 'c-chord.mp3';
+						}
+						else if (x > 200) {
+							audio.src = 'b-chord.mp3';
+						}
+					}
+
+					audio.play();
+				}
+			});
+		}
+
+		handTrack.load(modelParams)
+			.then(lmodel => {
+				model = lmodel;
+			})
+    </script>
+</body>
+</html>
